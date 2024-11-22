@@ -1,0 +1,33 @@
+{
+  "name": "msca-wallet-demo",
+  "version": "1.0.0",
+  "description": "Demonstrates performing operations on MSCA wallet",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "env-config": "cp .env.sample .env",
+    "token-transfer": "yarn build && yarn start token-transfer",
+    "sign-hash": "yarn build && yarn start sign-hash"
+  },
+  "author": "Circle",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "command-line-args": "^6.0.0",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.4",
+    "lodash": "^4.17.21",
+    "permissionless": "^0.1.31",
+    "readline-sync": "^1.4.10",
+    "viem": "^2.13.10",
+    "winston": "^3.17.0"
+  },
+  "packageManager": "yarn@1.22.22",
+  "devDependencies": {
+    "@types/command-line-args": "^5.2.3",
+    "@types/lodash": "^4.17.13",
+    "@types/readline-sync": "^1.4.8",
+    "typescript": "^5.6.3"
+  }
+}
