@@ -19,6 +19,17 @@
 import _ from "lodash";
 import logger, { logAndExit } from "./logger.js";
 
+export const getEnvValue = (envVarName: string) => {
+  const val = process.env[envVarName]?.trim();
+  
+  if (!val) {
+    logAndExit(`No ${envVarName} env var provided.`);
+  }
+
+  logger.info(`${envVarName} provided: ${val}`);
+  return val!;
+}
+
 // Helper function to get option value or environment variable
 export const getOptionValue = (options: any, optionName: string, envVarName: string) => {
   const val = options[optionName] || process.env[envVarName] || null;

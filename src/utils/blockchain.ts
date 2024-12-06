@@ -16,16 +16,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { EthereumProvider } from "@walletconnect/ethereum-provider";
+import { ProviderInfo } from "@walletconnect/ethereum-provider/dist/types/types.js";
 import { ethers, toBigInt } from "ethers";
 import { createBundlerClient, ENTRYPOINT_ADDRESS_V07, estimateUserOperationGas, getAccountNonce, UserOperation } from "permissionless";
-import { concat, concatHex, createPublicClient, encodeFunctionData, hexToBigInt, http, pad, toHex } from "viem";
+import qrcode from 'qrcode-terminal';
+import { concat, concatHex, createPublicClient, createWalletClient, custom, encodeFunctionData, hexToBigInt, http, pad, toHex } from "viem";
 import { readContract } from "viem/actions";
 
 import { EntryPointABI, ERC20ABI } from "../abi/index.js";
 import { ViemChain } from "./configs.js";
 import { isAlchemyBundler, maxBigInt } from "./helpers.js";
 import logger, { formatUserOperation, logAndExit } from "./logger.js";
-import { Address, ERC20TransferParams, GetPartialUserOpParams, MultiSigParams, MultiSigUserOpParams, Signer, UserOpEstimateParams, UserOpParams } from "./types.js";
+import { Address, ERC20TransferParams, GetPartialUserOpParams, MultiSigParams, MultiSigUserOpParams, Signer, SignMessageParams, UserOpEstimateParams, UserOpParams } from "./types.js";
+
 
 export const getUserOpHash = async (
   { chain, bundlerRPCUrl, userOp }: UserOpParams,
@@ -75,27 +79,104 @@ export const getUserOpHash = async (
   return partialUserOpHash as `0x${string}`;
 };
 
-export const signUserOp = async ({
+export const signMessageEIP1193 = async ({
   chain,
-  bundlerRPCUrl,
   signer,
-  userOp,
-}: UserOpParams & { signer: Signer }): Promise<string> => {
-  const partialUserOpHash = await getUserOpHash(
-    { chain, bundlerRPCUrl, userOp },
-    ENTRYPOINT_ADDRESS_V07
-  );
+  message,
+  walletConnectProjectId,
+}: SignMessageParams): Promise<string> => {
+  logger.info(`Signing userOpHash with ${signer.address}`);
+  const provider = await EthereumProvider.init({
+    projectId: walletConnectProjectId,
+    metadata: {
+        name: 'MSCA Wallet Recovery',
+        description: 'MSCA Wallet Recovery',
+        url: 'https://localhost:8080', // origin must match your domain & subdomain
+        icons: [],
+    },
+    showQrModal: false,
+    optionalChains: [
+        1, // ETH
+        11155111, // ETH sepolia
+        137, // Polygon
+        80002, // Polygon amoy
+        42161, // Arbitrum
+        421614, // Arbitrum sepolia
+    ],
+  });
 
-  let signature: string;
+  const handleDisplayUri = (uri: string) => {
+    logger.debug(`QR code URI: ${uri}`);
+    logger.info(`Please scan the following QR code to connect your wallet ${signer.address} to the MSCA wallet recovery app:`);
+    qrcode.generate(uri, { small: true });
+  };
 
-  const ethersWallet = new ethers.Wallet(signer.privateKey, undefined);
-  signature = await ethersWallet.signMessage(
-    ethers.getBytes(partialUserOpHash)
-  );
+  const handleConnect = (providerInfo: ProviderInfo) => {
+    logger.info(`Connected to WalletConnect!`);
+    logger.debug(`Provider Info: ${JSON.stringify(providerInfo)}`);
+  };
 
-  logger.debug(`signature: ${signature}`);
+  const handleDisconnect = (error?: Error) => {
+    if (error) {
+      logger.error(`Disconnected with error: ${error.message}`);
+    } else {
+      logger.info(`Disconnected from WalletConnect`);
+    }
+  };
+
+  provider.on("display_uri", handleDisplayUri);
+  provider.on("connect", handleConnect);
+  provider.on("disconnect", handleDisconnect);
+
+  try {
+    await provider.connect();
+    const walletClient = createWalletClient({
+      chain: ViemChain[chain],
+      transport: custom(provider),
+    });
+    const addresses = await walletClient.getAddresses();
+    logger.debug(`Connected wallet addresses: ${addresses}`);
+    if (!addresses.map(address => address.toLowerCase()).includes(signer.address.toLowerCase())) {
+      logAndExit(`Connected wallet does not contain the signer address: ${signer.address}`);
+    }
+  
+    logger.info(`Requesting signature from ${signer.address}, please check your wallet app and approve the signature request`);
+    const signature = await walletClient.signMessage({
+      account: signer.address,
+      message: { raw: ethers.getBytes(message) },
+    });
+    return signature;
+  } finally {
+    logger.debug(`Disconnecting from WalletConnect...`);
+    await provider.disconnect();
+    logger.debug(`Disconnected from WalletConnect...`);
+    provider.removeListener("display_uri", handleDisplayUri);
+    provider.removeListener("connect", handleConnect);
+    provider.removeListener("disconnect", handleDisconnect);
+  }
+}
+
+export const signMessagePrivateKey = async (
+  signer: Signer,
+  message: string,
+): Promise<string> => {
+  const ethersWallet = new ethers.Wallet(signer.privateKey!, undefined);
+  const signature = await ethersWallet.signMessage(ethers.getBytes(message));
   return signature;
-};
+}
+
+export const signMessage = async ({
+  chain,
+  signer,
+  message,
+  walletConnectProjectId,
+}: SignMessageParams): Promise<string> => {
+  if (signer.privateKey) {
+    return signMessagePrivateKey(signer, message);
+  } else {
+    return signMessageEIP1193({ chain, signer, message, walletConnectProjectId });
+  }
+}
 
 export const getPartialUserOp = async ({
   chain,
@@ -212,7 +293,7 @@ export const estimateUserOp = async ({
     maxFeePerGas: adjustedMaxFeePerGas,
     // Signature needs to include num of signers to get accurate gas estimates
     // Otherwise when broadcasting, you might end up with 'precheck failed: preVerificationGas is 45768 but must be at least 46680'
-    signature: '0x' + 'fffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa3c'.repeat(numSigners) as `0x${string}`,
+    signature: '0x' + 'fffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c'.repeat(numSigners - 1) + 'fffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa3c' as `0x${string}`,
     callGasLimit: toBigInt(0),
     verificationGasLimit: toBigInt(0),
     preVerificationGas: toBigInt(0)
@@ -242,6 +323,7 @@ export const estimateUserOp = async ({
 export const buildAndSignMultisigUserOp = async ({
   chain,
   bundlerRPCUrl,
+  walletConnectProjectId,
   walletAddress,
   signerAddresses,
   gasFeesMultiplier,
@@ -280,12 +362,17 @@ export const buildAndSignMultisigUserOp = async ({
     partialUserOpWithGas = userOpToSign;
 
     logger.debug(`Sign with ${signer.address}`);
-    const signature = await signUserOp({
-      chain,
-      bundlerRPCUrl,
-      signer, // Assuming this gets the signer instance
-      userOp: userOpToSign,
+    const partialUserOpHash = await getUserOpHash(
+      { chain, bundlerRPCUrl, userOp: userOpToSign },
+      ENTRYPOINT_ADDRESS_V07
+    );
+    const signature = await signMessage({
+      chain, 
+      signer,
+      message: partialUserOpHash,
+      walletConnectProjectId,
     });
+
     signatures.push({ signer: signer.address, signature, userOpSigType: isLastSigner ? "ACTUAL" : undefined });
   }
 

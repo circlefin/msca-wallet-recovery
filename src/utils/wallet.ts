@@ -18,8 +18,8 @@
 
 import { ethers } from "ethers";
 import readlineSync from "readline-sync";
-
 import { UserOperation } from "permissionless";
+
 import { ERC20ABI } from "../abi/index.js";
 import logger, { logAndExit } from "./logger.js";
 import { Address } from "./types.js";

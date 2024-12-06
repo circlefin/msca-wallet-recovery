@@ -18,14 +18,15 @@
 
 import commandLineArgs from "command-line-args";
 import "dotenv/config";
-import { ethers } from "ethers";
 import { getAddress } from "viem";
 
-import { getOptionValue } from "./utils/helpers.js";
-import logger, { logAndExit, printSectionHeader } from "./utils/logger.js";
-import { Signer } from "./utils/types.js";
+import { signMessage } from "./utils/blockchain.js";
+import { getEnvValue, getOptionValue } from "./utils/helpers.js";
+import logger, { printSectionHeader } from "./utils/logger.js";
+import { Address, NetworkKey, Signer } from "./utils/types.js";
 
 const optionDefinitions = [
+  { name: "blockchain", alias: "b", type: String },
   { name: "hash", alias: "h", type: String },
   { name: "address", alias: "a", type: String },
   { name: "signerAddresses", alias: "s", type: String },
@@ -37,6 +38,7 @@ export const signHash = async (argv: string[]): Promise<void> => {
   printSectionHeader('Inputs');
 
   // Get required input vars from CLI or environment
+  const blockchain = getOptionValue(options, "blockchain", "BLOCKCHAIN");
   const userOpHash = getOptionValue(options, "hash", "USER_OP_HASH");
   const signerAddress: string = getAddress(
     getOptionValue(options, "address", "SIGNER_ADDRESS")
@@ -44,21 +46,20 @@ export const signHash = async (argv: string[]): Promise<void> => {
   const signerAddresses: Signer[] = JSON.parse(
     getOptionValue(options, "signerAddresses", "SIGNER_ADDRESSES")
   );
+  const walletConnectProjectId = getEnvValue("WC_PROJECT_ID");
   
   printSectionHeader('Signature');
 
   // Check if the normalized address exists in the list of signer addresses
-  const foundSigner = signerAddresses.find(
+  const signer = signerAddresses.find(
     (signer) => getAddress(signer.address) === signerAddress
-  );
+  ) || {address: signerAddress as Address};
 
-  if (!foundSigner || !foundSigner.privateKey) {
-    logAndExit(`Private key not found for signer address ${signerAddress} (not present in SIGNER_ADDRESSES env var or CLI arg or not structured like .env.sample file).`);
-  }
-
-  const signer = new ethers.Wallet(foundSigner!.privateKey, undefined);
-
-  // Use bytes so that it will hash as eth signed message
-  const signature = await signer.signMessage(ethers.getBytes(userOpHash));
+  const signature = await signMessage({
+    chain: blockchain as NetworkKey,
+    signer: signer,
+    message: userOpHash,
+    walletConnectProjectId,
+  });
   logger.info(`Signature: ${signature}`);
 };

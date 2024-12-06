@@ -24,7 +24,7 @@ import { createPublicClient, getAddress, http, parseUnits } from "viem";
 
 import { buildAndSignMultisigUserOp, encodeCallData, getERC20TransferCallData } from "./utils/blockchain.js";
 import { USDCTokenAddress, ViemChain } from "./utils/configs.js";
-import { equalsIgnoreCase, getOptionValue } from "./utils/helpers.js";
+import { equalsIgnoreCase, getEnvValue, getOptionValue } from "./utils/helpers.js";
 import logger, { logAndExit, printSectionHeader } from "./utils/logger.js";
 import { NetworkKey } from "./utils/types.js";
 import { getAndCheckBalance } from "./utils/wallet.js";
@@ -80,6 +80,7 @@ export const tokenTransfer = async (argv: string[]): Promise<void> => {
     "bundlerRPCUrl",
     "BUNDLER_RPC_URL"
   );
+  const walletConnectProjectId = getEnvValue("WC_PROJECT_ID");
 
   if (equalsIgnoreCase(token, "native")) {
     logAndExit("Native token transfer currently not supported.");
@@ -109,6 +110,7 @@ export const tokenTransfer = async (argv: string[]): Promise<void> => {
   const userOperation = await buildAndSignMultisigUserOp({
     chain,
     bundlerRPCUrl,
+    walletConnectProjectId,
     walletAddress,
     signerAddresses,
     gasFeesMultiplier,
@@ -144,7 +146,8 @@ export const tokenTransfer = async (argv: string[]): Promise<void> => {
 
   // Token transfer
   printSectionHeader('Token Transfer');
-  
+  logger.info(`Sending the following userop`, userOperation);
+
   // Handle broadcasting
   if (broadcast) {
     // Blocks on user input to confirm to send to blockchain
