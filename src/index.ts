@@ -40,4 +40,5 @@ const scenario: string = args[0];
     default:
       logAndExit(`Unrecognized scenario: ${scenario}`);
   }
+  process.exit(0);
 })();

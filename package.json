@@ -14,11 +14,13 @@
   "author": "Circle",
   "license": "Apache-2.0",
   "dependencies": {
+    "@walletconnect/ethereum-provider": "^2.17.2",
     "command-line-args": "^6.0.0",
     "dotenv": "^16.4.5",
     "ethers": "^6.13.4",
     "lodash": "^4.17.21",
     "permissionless": "^0.1.31",
+    "qrcode-terminal": "^0.12.0",
     "readline-sync": "^1.4.10",
     "viem": "^2.13.10",
     "winston": "^3.17.0"
@@ -28,6 +30,7 @@
     "@types/command-line-args": "^5.2.3",
     "@types/lodash": "^4.17.13",
     "@types/readline-sync": "^1.4.8",
+    "@types/qrcode-terminal": "0.12.0",
     "typescript": "^5.6.3"
   }
 }

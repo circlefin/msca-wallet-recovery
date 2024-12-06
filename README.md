@@ -12,7 +12,7 @@ Demonstrates the following:
 - USDC Token transfer
   - Pay gas fee with wallet balance (native tokens)
   - Note, gas fees are by default set to snapshot values from mempool when user op is built. This can lead to failures when broadcasting if gas fees rise before the user op is sent. You can modify `GAS_FEES_MULTIPLIER` env var to a value larger than 1 to pay more gas fees, which will make it more likely the token transfer will succeed and speed up the time it takes for the token transfer to be settled.
-- Utility function for signing text with wallet private key
+- Utility function for signing text with wallet
 
 ## Supported Blockchains
 
@@ -74,7 +74,7 @@ This section outlines the required environment variables that need to be set in 
   - Description: Set to true to enable broadcasting of operations, or false to disable it.
 - `MSCA_WALLET_ADDRESS`
   - Type: `string`
-  - Description: The address of the MSCA wallet address you are interfacing with.
+  - Description: The address of the MSCA wallet you are interfacing with.
 - `BLOCKCHAIN`
   - Type: `string`
   - Description: The blockchain network to use. Options include:
@@ -89,13 +89,13 @@ This section outlines the required environment variables that need to be set in 
   - Description: The RPC URL for your blockchain provider (e.g. Infura, Alchemy). Replace <api-key> with your actual API key.
 - `SIGNER_ADDRESSES`
   - Type: `JSON string`
-  - Description: A JSON array containing objects with address and privateKey fields. Each object represents a signer address along with its associated private key. Example:
+  - Description: A JSON array containing objects with address and privateKey fields. Each object represents a signer address along with its associated private key. If private key is not provided, you will be prompted to connect your signer wallet by scanning a WalletConnect QR code when we need a signature from the signer. Example:
 
-    ```json
+    ```jsonc
     [
       {
         "address": "0x...",
-        "privateKey": "..."
+        "privateKey": "..." // optional 
       }
     ]
     ```
@@ -107,6 +107,12 @@ This section outlines the required environment variables that need to be set in 
     - warn
     - info (default)
     - debug
+
+#### WalletConnect
+
+- `WC_PROJECT_ID`
+  - Type: `string`
+  - Description: The WalletConnect project ID. We use WalletConnect to connect your signer wallets and request for signatures. We recommend create a blank project for this tool.
 
 #### Transfer
 
@@ -129,7 +135,7 @@ This section outlines the required environment variables that need to be set in 
 
 - `SIGNER_ADDRESS`
   - Type: `string`
-  - Description: The address of the signer used to create the user operation. This address must exist in SIGNER_ADDRESSES to retrieve its private key.
+  - Description: The address of the signer used to create the user operation.
 - `USER_OP_HASH`
   - Type: `string`
   - Description: The hash of the user operation (or any text) for signing.

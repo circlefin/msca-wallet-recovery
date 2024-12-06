@@ -41,8 +41,15 @@ export type ViemChainMap = {
 
 export type Signer = {
   address: Address;
-  privateKey: string;
+  privateKey?: string;
 };  
+
+export interface SignMessageParams {
+  chain: NetworkKey;
+  signer: Signer;
+  message: string;
+  walletConnectProjectId: string;
+};
 
 export interface BundlerParams {
   chain: NetworkKey;
@@ -61,6 +68,7 @@ export interface UserOpEstimateParams extends UserOpParams {
 export interface MultiSigParams {
   chain: NetworkKey;
   bundlerRPCUrl: string;
+  walletConnectProjectId: string;
   walletAddress: Address;
   signerAddresses: Signer[];
   gasFeesMultiplier: number;
