@@ -1,10 +1,10 @@
 # msca-wallet-recovery
 
-Official repository for interfacing with modular smart contract account (MSCA) wallets
+Official repository for interfacing with ERC-6900 modular smart contract account (MSCA) wallets
 
 ## Introduction
 
-Demonstrates how to interface with an MSCA wallet.
+Demonstrates how to interface with Circle's ERC-6900 MSCA wallets.
 Generalizes provider (i.e. Alchemy, Infura, etc.) for broadcasting user ops and uses standard SDKs for packing/unpacking data (viem + permissionless).
 IMPORTANT: assumes MSCA wallet has been deployed to blockchain (on-chain nonce > 0).
 Demonstrates the following:
@@ -13,6 +13,10 @@ Demonstrates the following:
   - Pay gas fee with wallet balance (native tokens)
   - Note, gas fees are by default set to snapshot values from mempool when user op is built. This can lead to failures when broadcasting if gas fees rise before the user op is sent. You can modify `GAS_FEES_MULTIPLIER` env var to a value larger than 1 to pay more gas fees, which will make it more likely the token transfer will succeed and speed up the time it takes for the token transfer to be settled.
 - Utility function for signing text with wallet
+
+## Prerequisites
+
+With transactions originating from a MSCA wallet, the gas fee is withdrawn from the MSCA wallet's native token balance. Prior to sending any transactions, please ensure that you have deposited sufficient amount of native tokens into the MSCA wallet. Please also be noted that MSCA wallet transactions cannot withdraw gas tokens from the owner wallets of the MSCA wallet.
 
 ## Supported Blockchains
 
