@@ -275,7 +275,8 @@ export const estimateUserOp = async ({
   const scaledGasFeesMultiplier = 100 + percentageIncrease;
   const adjustedMaxFeePerGas = feesPerGas.maxFeePerGas! * BigInt(scaledGasFeesMultiplier) / BigInt(100);
   const adjustedMaxPriorityFeePerGasBeforeMin = feesPerGas.maxPriorityFeePerGas! * BigInt(scaledGasFeesMultiplier) / BigInt(100);
-  const adjustedMaxPriorityFeePerGas = maxBigInt(adjustedMaxPriorityFeePerGasBeforeMin, alchemyMaxPriorityFeePerGas)
+  const adjustedAlchemyMaxPriorityFeePerGas = alchemyMaxPriorityFeePerGas * BigInt(scaledGasFeesMultiplier) / BigInt(100);
+  const adjustedMaxPriorityFeePerGas = maxBigInt(adjustedMaxPriorityFeePerGasBeforeMin, adjustedAlchemyMaxPriorityFeePerGas)
 
   logger.debug(`Original max fee per gas (in Wei): ${feesPerGas.maxFeePerGas}`);
   logger.debug(`Adjusted max fee per gas (in Wei): ${adjustedMaxFeePerGas}`);
