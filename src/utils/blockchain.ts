@@ -44,7 +44,7 @@ export const getUserOpHash = async (
     pad(toHex(userOp.verificationGasLimit), { size: 16 }),
     pad(toHex(userOp.callGasLimit), { size: 16 }),
   ]);
-  
+
   const gasFees = concatHex([
     pad(toHex(userOp.maxPriorityFeePerGas), { size: 16 }),
     pad(toHex(userOp.maxFeePerGas), { size: 16 }),
@@ -139,7 +139,7 @@ export const signMessageEIP1193 = async ({
     if (!addresses.map(address => address.toLowerCase()).includes(signer.address.toLowerCase())) {
       logAndExit(`Connected wallet does not contain the signer address: ${signer.address}`);
     }
-  
+
     logger.info(`Requesting signature from ${signer.address}, please check your wallet app and approve the signature request`);
     const signature = await walletClient.signMessage({
       account: signer.address,
@@ -231,10 +231,10 @@ export const estimateUserOp = async ({
     chain: ViemChain[chain],
     transport: http(bundlerRPCUrl),
   });
-  
+
   const feesPerGas = await publicClient.estimateFeesPerGas();
 
-  if (!feesPerGas.maxFeePerGas || !feesPerGas.maxPriorityFeePerGas) {
+  if (feesPerGas.maxFeePerGas === null || feesPerGas.maxFeePerGas === undefined || feesPerGas.maxPriorityFeePerGas === null || feesPerGas.maxPriorityFeePerGas === undefined) {
     logAndExit(`Error estimating fees per gas`)
   }
 
@@ -275,11 +275,12 @@ export const estimateUserOp = async ({
   const scaledGasFeesMultiplier = 100 + percentageIncrease;
   const adjustedMaxFeePerGas = feesPerGas.maxFeePerGas! * BigInt(scaledGasFeesMultiplier) / BigInt(100);
   const adjustedMaxPriorityFeePerGasBeforeMin = feesPerGas.maxPriorityFeePerGas! * BigInt(scaledGasFeesMultiplier) / BigInt(100);
-  const adjustedMaxPriorityFeePerGas = maxBigInt(adjustedMaxPriorityFeePerGasBeforeMin, alchemyMaxPriorityFeePerGas)
+  const adjustedAlchemyMaxPriorityFeePerGas = alchemyMaxPriorityFeePerGas * BigInt(scaledGasFeesMultiplier) / BigInt(100);
+  const adjustedMaxPriorityFeePerGas = maxBigInt(adjustedMaxPriorityFeePerGasBeforeMin, adjustedAlchemyMaxPriorityFeePerGas)
 
   logger.debug(`Original max fee per gas (in Wei): ${feesPerGas.maxFeePerGas}`);
   logger.debug(`Adjusted max fee per gas (in Wei): ${adjustedMaxFeePerGas}`);
-  
+
   logger.debug(`Original max priority fee per gas (in Wei): ${feesPerGas.maxPriorityFeePerGas}`);
   logger.debug(`Adjusted max priority fee per gas (in Wei): ${adjustedMaxPriorityFeePerGas}`);
 
@@ -367,7 +368,7 @@ export const buildAndSignMultisigUserOp = async ({
       ENTRYPOINT_ADDRESS_V07
     );
     const signature = await signMessage({
-      chain, 
+      chain,
       signer,
       message: partialUserOpHash,
       walletConnectProjectId,
@@ -420,7 +421,7 @@ export const buildMultiSigUserOp = async ({
         toHex(v, { size: 1 }),
       ]).slice(2);
     });
-    
+
   const finalUserOp: UserOperation<"v0.7"> = {
     ...multiSigUserOp,
     signature: "0x" + eoaSigs as `0x${string}`
