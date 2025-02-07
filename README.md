@@ -4,19 +4,18 @@ Official repository for interfacing with ERC-6900 modular smart contract account
 
 ## Introduction
 
-Demonstrates how to interface with Circle's ERC-6900 MSCA wallets.
-Generalizes provider (i.e. Alchemy, Infura, etc.) for broadcasting user ops and uses standard SDKs for packing/unpacking data (viem + permissionless).
-IMPORTANT: assumes MSCA wallet has been deployed to blockchain (on-chain nonce > 0).
-Demonstrates the following:
+This document demonstrates how to interface with Circle's ERC-6900 MSCA wallets using the `msca-wallet-recovery` tool.
+Generalizes RPC provider (i.e. Alchemy, Infura, etc.) for broadcasting user ops and uses standard SDKs for packing/unpacking data (viem + permissionless).
+IMPORTANT: assumes MSCA wallet has been deployed to blockchain (on-chain nonce > 0). Demonstrates the following:
 
 - USDC Token transfer
-  - Pay gas fee with wallet balance (native tokens)
-  - Note, gas fees are by default set to snapshot values from mempool when user op is built. This can lead to failures when broadcasting if gas fees rise before the user op is sent. You can modify `GAS_FEES_MULTIPLIER` env var to a value larger than 1 to pay more gas fees, which will make it more likely the token transfer will succeed and speed up the time it takes for the token transfer to be settled.
+  - Pay gas fee with wallet balance (You will need to fund your MSCA or Vault wallet with a sufficient balance of native tokens of the appropriate blockchain in order to self-fund transaction gas fees)
+  - Note, gas fees are by default set to snapshot values from mempool when user op is built. This can lead to failures when broadcasting if gas fees rise before the user op is sent. You can modify `GAS_FEES_MULTIPLIER` env var to a value greater than 1 to pay more gas fees, which will make it more likely the token transfer will succeed and speed up the time it takes for the token transfer to be settled.
 - Utility function for signing text with wallet
 
 ## Prerequisites
 
-With transactions originating from a MSCA wallet, the gas fee is withdrawn from the MSCA wallet's native token balance. Prior to sending any transactions, please ensure that you have deposited sufficient amount of native tokens into the MSCA wallet. Please also be noted that MSCA wallet transactions cannot withdraw gas tokens from the owner wallets of the MSCA wallet.
+With transactions originating from an MSCA wallet, the gas fee is withdrawn from the MSCA wallet's native token balance. Prior to sending any transactions, please ensure that you have deposited a sufficient amount of native tokens into the MSCA wallet. Please also be noted that MSCA wallet transactions cannot withdraw gas tokens from the owner wallets of the MSCA wallet.
 
 ## Supported Blockchains
 
@@ -44,6 +43,8 @@ Note, if you are unable to invoke `nvm` after installing manually and restarting
 echo "export NVM_DIR=\"$HOME/.nvm\"" >> ~/.bashrc
 echo "[ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\"" >> ~/.bashrc
 ```
+
+Refer to <https://github.com/nvm-sh/nvm> for troubleshooting and additional guidance.
 
 ### Setup App
 
@@ -90,7 +91,7 @@ This section outlines the required environment variables that need to be set in 
     - ARB-SEPOLIA
 - `BUNDLER_RPC_URL`
   - Type: `string`
-  - Description: The RPC URL for your blockchain provider (e.g. Infura, Alchemy). Replace <api-key> with your actual API key.
+  - Description: The RPC URL for your blockchain provider (e.g. Infura, Alchemy). Replace <api-key> with your actual API key. (e.g. Getting started with Alchemy: <https://docs.alchemy.com/docs/alchemy-quickstart-guide>)
 - `SIGNER_ADDRESSES`
   - Type: `JSON string`
   - Description: A JSON array containing objects with address and privateKey fields. Each object represents a signer address along with its associated private key. If private key is not provided, you will be prompted to connect your signer wallet by scanning a WalletConnect QR code when we need a signature from the signer. Example:
@@ -103,6 +104,8 @@ This section outlines the required environment variables that need to be set in 
       }
     ]
     ```
+
+  - Ensure you include sufficient signer addresses required to meet the minimum approvals required as configured on the associated MSCA/Vault wallet.
 
 - `LOG_LEVEL`
   - Type: `string`
@@ -117,6 +120,7 @@ This section outlines the required environment variables that need to be set in 
 - `WC_PROJECT_ID`
   - Type: `string`
   - Description: The WalletConnect project ID. We use WalletConnect to connect your signer wallets and request for signatures. We recommend create a blank project for this tool.
+  - Note: If you don’t hae a WalletConnect project ID, you can create one for free in a few simple steps by signing up at <https://cloud.reown.com/sign-in>. After account creation, create a new project and add the newly created project ID here.
 
 #### Transfer
 
