@@ -154,6 +154,7 @@ IMPORTANT:
 
 - `nvm use` will need to be executed in every new shell window before you execute a command (this ensures you are using a compatible version of node to run the scripts)
 - Command-line args can be replaced with environment variables (so not every combination is enumerated below)
+- Follow the instructions to connect your signer wallets via scanning QR code, or via WalletConnect URI
 
 #### Transfer Token
 
