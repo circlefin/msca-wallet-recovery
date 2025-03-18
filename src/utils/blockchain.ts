@@ -106,9 +106,9 @@ export const signMessageEIP1193 = async ({
   });
 
   const handleDisplayUri = (uri: string) => {
-    logger.debug(`QR code URI: ${uri}`);
     logger.info(`Please scan the following QR code to connect your wallet ${signer.address} to the MSCA wallet recovery app:`);
     qrcode.generate(uri, { small: true });
+    logger.info(`If you use any wallet application that cannot directly scan the QR code, please copy & paste the following WalletConnect URI into your wallet application for connection. \n${uri}`);
   };
 
   const handleConnect = (providerInfo: ProviderInfo) => {
